@@ -50,6 +50,3 @@ def download():
         return send_file(video_io, as_attachment=True, download_name='Instadownloader_video.mp4', mimetype='video/mp4')
     else:
         return "Failed to download video."
-
-if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=os.getenv("port", default=5000))
