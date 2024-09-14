@@ -20,17 +20,23 @@ def get_instagram_video_url(instagram_url):
     try:
         shortcode = extract_shortcode(instagram_url)
         if shortcode:
+            print(f"Extracted shortcode: {shortcode}")  # Debugging print
             L = instaloader.Instaloader()
             post = instaloader.Post.from_shortcode(L.context, shortcode)
-            if post.is_video:  # Ensure the post is a video
+            
+            # Check if the post has a video
+            if post.is_video:
                 video_url = post.video_url
+                print(f"Fetched video URL: {video_url}")  # Debugging print
                 return video_url
             else:
+                print("Post does not contain a video.")  # Debugging print
                 return None
         else:
+            print("Failed to extract shortcode.")  # Debugging print
             return None
     except Exception as e:
-        print(f"Error fetching video URL: {e}")
+        print(f"Error fetching video URL: {e}")  # Debugging print
         return None
 
 # Route to handle the homepage and form submission
@@ -44,7 +50,6 @@ def index():
         video_url = get_instagram_video_url(instagram_url)
 
         if video_url:
-            print(f"Video URL fetched: {video_url}")  # Debugging print
             return render_template('index.html', video_url=video_url)
         else:
             print("Failed to fetch video.")  # Debugging print
