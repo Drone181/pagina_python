@@ -3,11 +3,12 @@ import requests
 from io import BytesIO
 import logging
 from urllib.parse import quote
-#
+import re
+
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-def get_instagram_video_url(instagram_url):
+def get_instagram_video_url_api(instagram_url):
     api_key = '72ea23ea89mshf6775ef3b0dde3cp1c8da5jsn0d645a94c48c'  # Replace with your actual RapidAPI key
     api_host = 'instagram-media-downloader6.p.rapidapi.com'
 
@@ -16,7 +17,6 @@ def get_instagram_video_url(instagram_url):
         'x-rapidapi-host': api_host
     }
 
-    # Properly encode the Instagram URL
     encoded_url = quote(instagram_url, safe='')
     api_url = f'https://{api_host}/instagram/download'
     params = {'url': encoded_url}
@@ -31,6 +31,31 @@ def get_instagram_video_url(instagram_url):
         logging.error(f"Error fetching video via API: {e}")
         logging.error(f"Response content: {e.response.content if hasattr(e, 'response') else 'No response content'}")
         return None
+
+def get_instagram_video_url_fallback(instagram_url):
+    try:
+        response = requests.get(instagram_url)
+        response.raise_for_status()
+        html_content = response.text
+        video_url_match = re.search(r'<meta property="og:video" content="([^"]+)"', html_content)
+        if video_url_match:
+            return video_url_match.group(1)
+        else:
+            logging.warning("Fallback method: No video URL found in HTML")
+            return None
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Fallback method: Error fetching Instagram page: {e}")
+        return None
+
+def get_instagram_video_url(instagram_url):
+    # Try API method first
+    video_url = get_instagram_video_url_api(instagram_url)
+    if video_url:
+        return video_url
+    
+    # If API fails, try fallback method
+    logging.info("API method failed. Attempting fallback method.")
+    return get_instagram_video_url_fallback(instagram_url)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
