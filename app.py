@@ -25,22 +25,27 @@ def download_video():
         logging.error("RAPIDAPI_KEY is not set")
         return jsonify({"error": "API key is not configured"}), 500
 
-    api_url = "https://instagram-media-downloader6.p.rapidapi.com/"
+    api_url = "https://instagram-media-downloader6.p.rapidapi.com/media"
     headers = {
+        "content-type": "application/json",
         "X-RapidAPI-Key": API_KEY,
         "X-RapidAPI-Host": "instagram-media-downloader6.p.rapidapi.com"
     }
     payload = {"url": instagram_url}
 
     try:
+        logging.info(f"Sending request to API with URL: {instagram_url}")
         response = requests.post(api_url, json=payload, headers=headers)
+        logging.info(f"API response status code: {response.status_code}")
+        logging.info(f"API response headers: {response.headers}")
+        
         response.raise_for_status()
         data = response.json()
         
-        logging.debug(f"API Response: {data}")
+        logging.debug(f"API Response data: {data}")
         
-        if 'result' in data and 'download_link' in data['result']:
-            video_url = data['result']['download_link']
+        if 'result' in data and 'downloadUrl' in data['result']:
+            video_url = data['result']['downloadUrl']
             video_response = requests.get(video_url)
             return send_file(
                 video_response.content,
