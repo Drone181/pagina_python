@@ -2,30 +2,34 @@ from flask import Flask, request, render_template, send_file
 import requests
 from io import BytesIO
 import logging
+from urllib.parse import quote
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 def get_instagram_video_url(instagram_url):
     api_key = '72ea23ea89mshf6775ef3b0dde3cp1c8da5jsn0d645a94c48c'  # Replace with your actual RapidAPI key
-    api_host = 'instagram-media-downloader6.p.rapidapi.com'  # Verify this host
+    api_host = 'instagram-media-downloader6.p.rapidapi.com'
 
     headers = {
         'x-rapidapi-key': api_key,
         'x-rapidapi-host': api_host
     }
 
-    api_url = f'https://{api_host}/instagram/download'  # Updated API URL
-    params = {'url': instagram_url}
+    # Properly encode the Instagram URL
+    encoded_url = quote(instagram_url, safe='')
+    api_url = f'https://{api_host}/instagram/download'
+    params = {'url': encoded_url}
     
     try:
         response = requests.get(api_url, headers=headers, params=params)
-        response.raise_for_status()  # Raise an exception for non-200 status codes
+        response.raise_for_status()
         video_data = response.json()
         logging.debug(f"API Response: {video_data}")
         return video_data.get('video_url')
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching video via API: {e}")
+        logging.error(f"Response content: {e.response.content if hasattr(e, 'response') else 'No response content'}")
         return None
 
 @app.route('/', methods=['GET', 'POST'])
