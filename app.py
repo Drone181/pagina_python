@@ -1,12 +1,12 @@
-from flask import Flask, request, render_template, send_file, redirect, url_for, flash
+from flask import Flask, request, render_template, send_file
 import instaloader
 import re
 import requests
 from io import BytesIO
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Required for flash messages
 
+# Function to extract shortcode from URL
 def extract_shortcode(instagram_url):
     pattern = r'instagram\.com/(?:p|reel|tv)/([A-Za-z0-9_-]+)/?'
     match = re.search(pattern, instagram_url)
@@ -15,6 +15,7 @@ def extract_shortcode(instagram_url):
     else:
         return None
 
+# Function to get Instagram video URL
 def get_instagram_video_url(instagram_url):
     try:
         shortcode = extract_shortcode(instagram_url)
@@ -32,21 +33,26 @@ def get_instagram_video_url(instagram_url):
         print(f"Error fetching video URL: {e}")
         return None
 
+# Route to handle the homepage and form submission
 @app.route('/', methods=['GET', 'POST'])
 def index():
     video_url = None
     if request.method == 'POST':
-        instagram_url = request.form['url']
+        instagram_url = request.form.get('url')
+        print(f"Instagram URL received: {instagram_url}")  # Debugging print
+
         video_url = get_instagram_video_url(instagram_url)
 
         if video_url:
+            print(f"Video URL fetched: {video_url}")  # Debugging print
             return render_template('index.html', video_url=video_url)
         else:
-            flash("Failed to fetch video. Please check the URL and try again.")
-            return redirect(url_for('index'))
+            print("Failed to fetch video.")  # Debugging print
+            return "Failed to fetch video. Please check the URL and try again."
 
     return render_template('index.html', video_url=video_url)
 
+# Route to handle downloading the video
 @app.route('/download', methods=['POST'])
 def download():
     video_url = request.form['video_url']
