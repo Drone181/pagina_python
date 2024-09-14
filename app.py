@@ -17,11 +17,11 @@ def download_video():
     if not instagram_url:
         return jsonify({"error": "No URL provided"}), 400
 
-    api_url = "https://instagram-downloader-download-instagram-videos-stories.p.rapidapi.com/index"
+    api_url = "https://instagram-media-downloader6.p.rapidapi.com/download"
     querystring = {"url": instagram_url}
     headers = {
         "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "instagram-downloader-download-instagram-videos-stories.p.rapidapi.com"
+        "X-RapidAPI-Host": "instagram-media-downloader6.p.rapidapi.com'"
     }
 
     try:
