@@ -1,63 +1,45 @@
 from flask import Flask, request, render_template, send_file
-import instaloader
-import re
 import requests
 from io import BytesIO
 
 app = Flask(__name__)
 
-# Function to extract shortcode from URL
-def extract_shortcode(instagram_url):
-    pattern = r'instagram\.com/(?:p|reel|tv)/([A-Za-z0-9_-]+)/?'
-    match = re.search(pattern, instagram_url)
-    if match:
-        return match.group(1)
-    else:
-        return None
-
-# Function to get Instagram video URL
+# Function to get Instagram video URL via API
 def get_instagram_video_url(instagram_url):
+    api_key = '72ea23ea89mshf6775ef3b0dde3cp1c8da5jsn0d645a94c48c'  # Replace with your actual RapidAPI key
+    api_host = 'instagram-media-downloader6.p.rapidapi.com'  # Replace with your RapidAPI host (e.g., 'instagram-video-downloader.p.rapidapi.com')
+
+    headers = {
+        'x-rapidapi-key': api_key,
+        'x-rapidapi-host': api_host
+    }
+
+    api_url = f'https://api.rapidapi.com/instagram/download?url={instagram_url}'
+    
     try:
-        shortcode = extract_shortcode(instagram_url)
-        if shortcode:
-            print(f"Extracted shortcode: {shortcode}")  # Debugging print
-            L = instaloader.Instaloader()
-            post = instaloader.Post.from_shortcode(L.context, shortcode)
-            
-            # Check if the post has a video
-            if post.is_video:
-                video_url = post.video_url
-                print(f"Fetched video URL: {video_url}")  # Debugging print
-                return video_url
-            else:
-                print("Post does not contain a video.")  # Debugging print
-                return None
+        response = requests.get(api_url, headers=headers)
+        if response.status_code == 200:
+            video_data = response.json()
+            return video_data.get('video_url')
         else:
-            print("Failed to extract shortcode.")  # Debugging print
+            print(f"Error fetching video via API: {response.status_code}, {response.text}")
             return None
     except Exception as e:
-        print(f"Error fetching video URL: {e}")  # Debugging print
+        print(f"Exception fetching video: {e}")
         return None
 
-# Route to handle the homepage and form submission
 @app.route('/', methods=['GET', 'POST'])
 def index():
     video_url = None
     if request.method == 'POST':
         instagram_url = request.form.get('url')
-        print(f"Instagram URL received: {instagram_url}")  # Debugging print
-
         video_url = get_instagram_video_url(instagram_url)
-
-        if video_url:
-            return render_template('index.html', video_url=video_url)
-        else:
-            print("Failed to fetch video.")  # Debugging print
+        if not video_url:
             return "Failed to fetch video. Please check the URL and try again."
+        return render_template('index.html', video_url=video_url)
 
     return render_template('index.html', video_url=video_url)
 
-# Route to handle downloading the video
 @app.route('/download', methods=['POST'])
 def download():
     video_url = request.form['video_url']
