@@ -4,20 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Instagram Video Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #1877f2;
+            margin-bottom: 1rem;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #166fe5;
+        }
+        #message {
+            margin-top: 1rem;
+            color: #1877f2;
+        }
+    </style>
 </head>
 <body>
-    <h1>Instagram Video Downloader</h1>
-    <form method="POST">
-        <label for="url">Instagram URL:</label>
-        <input type="text" id="url" name="url" required>
-        <button type="submit">Get Download Link</button>
-    </form>
-    
-    {% if downloader_link %}
-    <div>
-        <h2>Download Link:</h2>
-        <a href="{{ downloader_link }}" target="_blank">Click here to download your video</a>
+    <div class="container">
+        <h1>Instagram Video Downloader</h1>
+        <input type="text" id="instagram-url" placeholder="Enter Instagram video URL">
+        <button onclick="downloadVideo()">Download</button>
+        <div id="message"></div>
     </div>
-    {% endif %}
+
+    <script>
+        function downloadVideo() {
+            const url = document.getElementById('instagram-url').value;
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = 'Downloading...';
+
+            fetch('/api/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'instagram_video.mp4';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                messageElement.textContent = 'Download complete!';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageElement.textContent = 'Error downloading video. Please try again.';
+            });
+        }
+    </script>
 </body>
 </html>

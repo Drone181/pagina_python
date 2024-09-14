@@ -1,29 +1,47 @@
-from flask import Flask, request, render_template, redirect
-import logging
-from urllib.parse import quote
+from flask import Flask, request, jsonify, send_file, render_template
+import requests
+import os
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
-def get_downloader_link(instagram_url):
-    # Using a reliable third-party Instagram downloader
-    base_url = "https://www.instagramsave.com/download-instagram-videos.php"
-    encoded_url = quote(instagram_url)
-    return f"{base_url}?url={encoded_url}"
+# Get the API key from environment variable
+API_KEY = os.environ.get('RAPIDAPI_KEY')
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
-    downloader_link = None
-    if request.method == 'POST':
-        instagram_url = request.form.get('url')
-        logging.info(f"Received Instagram URL: {instagram_url}")
-        if instagram_url:
-            downloader_link = get_downloader_link(instagram_url)
-            logging.info(f"Generated downloader link: {downloader_link}")
+    return render_template('index.html')
+
+@app.route('/api/download', methods=['POST'])
+def download_video():
+    instagram_url = request.json.get('url')
+    if not instagram_url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    api_url = "https://instagram-downloader-download-instagram-videos-stories.p.rapidapi.com/index"
+    querystring = {"url": instagram_url}
+    headers = {
+        "X-RapidAPI-Key": API_KEY,
+        "X-RapidAPI-Host": "instagram-downloader-download-instagram-videos-stories.p.rapidapi.com"
+    }
+
+    try:
+        response = requests.get(api_url, headers=headers, params=querystring)
+        response.raise_for_status()
+        data = response.json()
+        
+        if 'media' in data and data['media']:
+            video_url = data['media']
+            video_response = requests.get(video_url)
+            return send_file(
+                video_response.content,
+                mimetype='video/mp4',
+                as_attachment=True,
+                download_name='instagram_video.mp4'
+            )
         else:
-            logging.warning("No Instagram URL provided")
-            return "Please provide an Instagram URL."
-    return render_template('index.html', downloader_link=downloader_link)
+            return jsonify({"error": "Unable to fetch video URL"}), 500
+    except requests.RequestException as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
