@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify, send_file, render_template
 import requests
 import os
+import logging
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Get the API key from environment variable
 API_KEY = os.environ.get('RAPIDAPI_KEY')
@@ -17,20 +21,26 @@ def download_video():
     if not instagram_url:
         return jsonify({"error": "No URL provided"}), 400
 
-    api_url = "https://instagram-media-downloader6.p.rapidapi.com/download"
-    querystring = {"url": instagram_url}
+    if not API_KEY:
+        logging.error("RAPIDAPI_KEY is not set")
+        return jsonify({"error": "API key is not configured"}), 500
+
+    api_url = "https://instagram-media-downloader6.p.rapidapi.com/"
     headers = {
         "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "instagram-media-downloader6.p.rapidapi.com'"
+        "X-RapidAPI-Host": "instagram-media-downloader6.p.rapidapi.com"
     }
+    payload = {"url": instagram_url}
 
     try:
-        response = requests.get(api_url, headers=headers, params=querystring)
+        response = requests.post(api_url, json=payload, headers=headers)
         response.raise_for_status()
         data = response.json()
         
-        if 'media' in data and data['media']:
-            video_url = data['media']
+        logging.debug(f"API Response: {data}")
+        
+        if 'result' in data and 'download_link' in data['result']:
+            video_url = data['result']['download_link']
             video_response = requests.get(video_url)
             return send_file(
                 video_response.content,
@@ -39,8 +49,10 @@ def download_video():
                 download_name='instagram_video.mp4'
             )
         else:
+            logging.error(f"Unable to fetch video URL. API response: {data}")
             return jsonify({"error": "Unable to fetch video URL"}), 500
     except requests.RequestException as e:
+        logging.error(f"Request failed: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
