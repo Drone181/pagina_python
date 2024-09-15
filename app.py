@@ -22,8 +22,10 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     if not API_KEY:
-        logging.error("RAPIDAPI_KEY is not set")
+        logging.error("RAPIDAPI_KEY is not set in environment variables")
         return jsonify({"error": "API key is not configured"}), 500
+
+    logging.info(f"Using API Key: {API_KEY[:10]}...{API_KEY[-5:]}")  # Log part of the API key for verification
 
     api_url = "https://instagram-media-downloader6.p.rapidapi.com/media"
     headers = {
@@ -35,9 +37,14 @@ def download_video():
 
     try:
         logging.info(f"Sending request to API with URL: {instagram_url}")
+        logging.debug(f"Full headers: {headers}")  # Log full headers for debugging
         response = requests.post(api_url, json=payload, headers=headers)
         logging.info(f"API response status code: {response.status_code}")
         logging.info(f"API response headers: {response.headers}")
+        
+        if response.status_code == 401 or response.status_code == 403:
+            logging.error("API Key authentication failed")
+            return jsonify({"error": "API Key authentication failed"}), 401
         
         response.raise_for_status()
         data = response.json()
