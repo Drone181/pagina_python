@@ -52,15 +52,15 @@
     <div class="container">
         <h1>Instagram Video Downloader</h1>
         <input type="text" id="instagram-url" placeholder="Enter Instagram video URL">
-        <button onclick="downloadVideo()">Download</button>
+        <button onclick="getVideoUrl()">Get Download Link</button>
         <div id="message"></div>
     </div>
 
     <script>
-        function downloadVideo() {
+        function getVideoUrl() {
             const url = document.getElementById('instagram-url').value;
             const messageElement = document.getElementById('message');
-            messageElement.textContent = 'Downloading...';
+            messageElement.textContent = 'Fetching video URL...';
 
             fetch('/api/download', {
                 method: 'POST',
@@ -69,26 +69,17 @@
                 },
                 body: JSON.stringify({ url: url }),
             })
-            .then(response => {
-                if (response.ok) {
-                    return response.blob();
+            .then(response => response.json())
+            .then(data => {
+                if (data.video_url) {
+                    messageElement.innerHTML = `<a href="${data.video_url}" target="_blank">Click here to download the video</a>`;
+                } else {
+                    messageElement.textContent = 'Error: Unable to fetch video URL.';
                 }
-                throw new Error('Network response was not ok.');
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'instagram_video.mp4';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                messageElement.textContent = 'Download complete!';
             })
             .catch(error => {
                 console.error('Error:', error);
-                messageElement.textContent = 'Error downloading video. Please try again.';
+                messageElement.textContent = 'Error fetching video URL. Please try again.';
             });
         }
     </script>
