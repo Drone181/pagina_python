@@ -19,6 +19,8 @@
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
         }
         h1 {
             color: #1877f2;
@@ -30,6 +32,7 @@
             margin-bottom: 1rem;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;
         }
         button {
             background-color: #1877f2;
@@ -38,6 +41,7 @@
             padding: 0.5rem 1rem;
             border-radius: 4px;
             cursor: pointer;
+            width: 100%;
         }
         button:hover {
             background-color: #166fe5;
@@ -45,6 +49,10 @@
         #message {
             margin-top: 1rem;
             color: #1877f2;
+            word-break: break-word;
+        }
+        .error {
+            color: #d93025;
         }
     </style>
 </head>
@@ -61,6 +69,7 @@
             const url = document.getElementById('instagram-url').value;
             const messageElement = document.getElementById('message');
             messageElement.textContent = 'Fetching video URL...';
+            messageElement.classList.remove('error');
 
             fetch('/api/download', {
                 method: 'POST',
@@ -74,12 +83,14 @@
                 if (data.video_url) {
                     messageElement.innerHTML = `<a href="${data.video_url}" target="_blank">Click here to download the video</a>`;
                 } else {
-                    messageElement.textContent = 'Error: Unable to fetch video URL.';
+                    messageElement.textContent = `Error: ${data.error || 'Unable to fetch video URL.'}`;
+                    messageElement.classList.add('error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 messageElement.textContent = 'Error fetching video URL. Please try again.';
+                messageElement.classList.add('error');
             });
         }
     </script>
