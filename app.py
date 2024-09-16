@@ -40,12 +40,15 @@ def download_video():
         
         json_data = json.loads(data.decode("utf-8"))
         
-        if 'video' in json_data and json_data['video']:
-            video_url = json_data['video']
+        if 'download_url' in json_data and json_data['download_url']:
+            video_url = json_data['download_url']
             return jsonify({"video_url": video_url})
+        elif 'error' in json_data:
+            logging.error(f"API returned an error: {json_data['error']}")
+            return jsonify({"error": "API returned an error"}), 500
         else:
-            logging.error(f"Video URL not found in API response: {json_data}")
-            return jsonify({"error": "Video URL not found in API response"}), 500
+            logging.error(f"Download URL not found in API response: {json_data}")
+            return jsonify({"error": "Download URL not found in API response"}), 500
     except json.JSONDecodeError as e:
         logging.error(f"JSON Decode Error: {e}")
         return jsonify({"error": "Invalid JSON response from API"}), 500
