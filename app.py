@@ -27,11 +27,11 @@ def download_video():
 
     logging.info(f"Using API Key: {API_KEY[:10]}...{API_KEY[-5:]}")  # Log part of the API key for verification
 
-    api_url = "https://instagram-media-downloader6.p.rapidapi.com/download"
+    api_url = "https://rapidapi.com/download"
     headers = {
         "content-type": "application/json",
         "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": "instagram-media-downloader6.p.rapidapi.com"
+        "X-RapidAPI-Host": "rapidapi.com"
     }
     payload = {"url": instagram_url}
 
