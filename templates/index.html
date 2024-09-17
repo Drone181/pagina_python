@@ -12,104 +12,6 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
-        }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 100%;
-        }
-        h1 {
-            color: #1877f2;
-            margin-bottom: 1rem;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 0.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #1877f2;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #166fe5;
-        }
-        #message {
-            margin-top: 1rem;
-            color: #1877f2;
-            word-break: break-word;
-        }
-        .error {
-            color: #d93025;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Instagram Video Downloader</h1>
-        <input type="text" id="instagram-url" placeholder="Enter Instagram video URL">
-        <button onclick="getVideoUrl()">Get Download Link</button>
-        <div id="message"></div>
-    </div>
-
-    <script>
-        function getVideoUrl() {
-            const url = document.getElementById('instagram-url').value;
-            const messageElement = document.getElementById('message');
-            messageElement.textContent = 'Fetching video URL...';
-            messageElement.classList.remove('error');
-
-            fetch('/api/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: url }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.video_url) {
-                    messageElement.innerHTML = `<a href="${data.video_url}" target="_blank">Click here to download the video</a>`;
-                } else {
-                    messageElement.textContent = `Error: ${data.error || 'Unable to fetch video URL.'}`;
-                    messageElement.classList.add('error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                messageElement.textContent = 'Error fetching video URL. Please try again.';
-                messageElement.classList.add('error');
-            });
-        }
-    </script>
-</body>
-</html> -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram Video Downloader</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
             background-color: #f0f0f0;
         }
         .container {
@@ -197,6 +99,138 @@
                 console.error('Error:', error);
                 message.textContent = 'An error occurred. Please try again.';
                 downloadBtn.style.display = 'none';
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (videoUrl) {
+                window.location.href = `/api/download?url=${encodeURIComponent(videoUrl)}`;
+            }
+        });
+    </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Video Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+        }
+        #url-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        #search-btn, #download-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #search-btn:hover, #download-btn:hover {
+            background-color: #45a049;
+        }
+        #message {
+            margin-top: 10px;
+            text-align: center;
+            color: red;
+        }
+        #download-btn {
+            display: none;
+            margin-top: 10px;
+        }
+        #thumbnail {
+            display: none;
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Instagram Video Downloader</h1>
+        <input type="text" id="url-input" placeholder="Enter Instagram URL">
+        <button id="search-btn">Get Download Link</button>
+        <img id="thumbnail" alt="Video thumbnail">
+        <button id="download-btn">Download Video</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const searchBtn = document.getElementById('search-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const urlInput = document.getElementById('url-input');
+        const message = document.getElementById('message');
+        const thumbnail = document.getElementById('thumbnail');
+
+        let videoUrl = '';
+
+        searchBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                message.textContent = 'Please enter a valid Instagram URL';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    message.textContent = data.error;
+                    downloadBtn.style.display = 'none';
+                    thumbnail.style.display = 'none';
+                } else {
+                    videoUrl = data.video_url;
+                    message.textContent = 'Video found! Click the download button to save it.';
+                    downloadBtn.style.display = 'block';
+                    
+                    if (data.thumbnail_url) {
+                        thumbnail.src = data.thumbnail_url;
+                        thumbnail.style.display = 'block';
+                    } else {
+                        thumbnail.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                message.textContent = 'An error occurred. Please try again.';
+                downloadBtn.style.display = 'none';
+                thumbnail.style.display = 'none';
             }
         });
 
