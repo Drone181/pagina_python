@@ -126,7 +126,8 @@ def search_video():
         
         if 'download_url' in json_data and json_data['download_url']:
             video_url = json_data['download_url']
-            thumbnail_url = json_data.get('thumb', '')  # Get thumbnail URL if available
+            thumbnail_url = json_data.get('thumb', '')
+            logging.debug(f"Thumbnail URL: {thumbnail_url}")
             return jsonify({"video_url": video_url, "thumbnail_url": thumbnail_url})
         elif 'error' in json_data:
             logging.error(f"API returned an error: {json_data['error']}")

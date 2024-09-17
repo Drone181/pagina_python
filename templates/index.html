@@ -171,6 +171,11 @@
             margin-top: 10px;
             border-radius: 4px;
         }
+        #debug-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -181,6 +186,7 @@
         <img id="thumbnail" alt="Video thumbnail">
         <button id="download-btn">Download Video</button>
         <div id="message"></div>
+        <div id="debug-info"></div>
     </div>
 
     <script>
@@ -189,6 +195,7 @@
         const urlInput = document.getElementById('url-input');
         const message = document.getElementById('message');
         const thumbnail = document.getElementById('thumbnail');
+        const debugInfo = document.getElementById('debug-info');
 
         let videoUrl = '';
 
@@ -209,6 +216,7 @@
                 });
 
                 const data = await response.json();
+                debugInfo.textContent = `API Response: ${JSON.stringify(data)}`;
 
                 if (data.error) {
                     message.textContent = data.error;
@@ -222,8 +230,16 @@
                     if (data.thumbnail_url) {
                         thumbnail.src = data.thumbnail_url;
                         thumbnail.style.display = 'block';
+                        thumbnail.onerror = () => {
+                            debugInfo.textContent += '\nThumbnail failed to load.';
+                            thumbnail.style.display = 'none';
+                        };
+                        thumbnail.onload = () => {
+                            debugInfo.textContent += '\nThumbnail loaded successfully.';
+                        };
                     } else {
                         thumbnail.style.display = 'none';
+                        debugInfo.textContent += '\nNo thumbnail URL provided.';
                     }
                 }
             } catch (error) {
@@ -231,6 +247,7 @@
                 message.textContent = 'An error occurred. Please try again.';
                 downloadBtn.style.display = 'none';
                 thumbnail.style.display = 'none';
+                debugInfo.textContent = `Error: ${error.message}`;
             }
         });
 
