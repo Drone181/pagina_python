@@ -164,5 +164,25 @@ def download_video():
         logging.error(f"Error downloading video: {e}")
         return jsonify({"error": "Failed to download video"}), 500
 
+@app.route('/api/thumbnail')
+def get_thumbnail():
+    thumbnail_url = request.args.get('url')
+    if not thumbnail_url:
+        return jsonify({"error": "No thumbnail URL provided"}), 400
+
+    try:
+        # Decode the URL if it's encoded
+        decoded_url = unquote(thumbnail_url)
+        response = requests.get(decoded_url)
+        response.raise_for_status()
+        
+        return send_file(
+            BytesIO(response.content),
+            mimetype='image/jpeg'
+        )
+    except requests.RequestException as e:
+        logging.error(f"Error fetching thumbnail: {e}")
+        return jsonify({"error": "Failed to fetch thumbnail"}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
