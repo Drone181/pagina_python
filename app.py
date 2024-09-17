@@ -84,7 +84,7 @@ from flask import Flask, request, jsonify, render_template, send_file
 import http.client
 import json
 import os
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 import logging
 import requests
 from io import BytesIO
@@ -127,6 +127,8 @@ def search_video():
         if 'download_url' in json_data and json_data['download_url']:
             video_url = json_data['download_url']
             thumbnail_url = json_data.get('thumb', '')
+            if thumbnail_url:
+                thumbnail_url = unquote(thumbnail_url)  # Decode the URL if it's encoded
             logging.debug(f"Thumbnail URL: {thumbnail_url}")
             return jsonify({"video_url": video_url, "thumbnail_url": thumbnail_url})
         elif 'error' in json_data:
