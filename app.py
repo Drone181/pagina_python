@@ -7,6 +7,8 @@ import logging
 import requests
 from io import BytesIO
 import re
+import traceback
+from flask import Response, jsonify
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -89,20 +91,27 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
+        logging.info(f"Attempting to download video from URL: {video_url}")
+        
         # Stream the video content
-        response = requests.get(video_url, stream=True)
+        response = requests.get(video_url, stream=True, timeout=30)
         response.raise_for_status()
         
         # Get the content type from the response headers
         content_type = response.headers.get('content-type', 'video/mp4')
+        logging.info(f"Content-Type of the video: {content_type}")
         
         # Determine the appropriate file extension
         file_extension = 'mp4' if 'mp4' in content_type else 'mov'
         
         # Create a generator to stream the content
         def generate():
-            for chunk in response.iter_content(chunk_size=8192):
-                yield chunk
+            try:
+                for chunk in response.iter_content(chunk_size=8192):
+                    yield chunk
+            except Exception as e:
+                logging.error(f"Error while streaming video content: {str(e)}")
+                raise
 
         # Return a streaming response
         return Response(
@@ -113,8 +122,12 @@ def download_video():
             }
         )
     except requests.RequestException as e:
-        logging.error(f"Error downloading video: {e}")
-        return jsonify({"error": "Failed to download video"}), 500
+        logging.error(f"Request exception while downloading video: {str(e)}")
+        return jsonify({"error": "Failed to download video", "details": str(e)}), 500
+    except Exception as e:
+        logging.error(f"Unexpected error in download_video: {str(e)}")
+        logging.error(traceback.format_exc())
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 @app.route('/api/thumbnail')
 def get_thumbnail():
