@@ -89,14 +89,28 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
-        response = requests.get(video_url)
+        # Stream the video content
+        response = requests.get(video_url, stream=True)
         response.raise_for_status()
         
-        return send_file(
-            BytesIO(response.content),
-            mimetype='video/mp4',
-            as_attachment=True,
-            download_name='instagram_video.mp4'
+        # Get the content type from the response headers
+        content_type = response.headers.get('content-type', 'video/mp4')
+        
+        # Determine the appropriate file extension
+        file_extension = 'mp4' if 'mp4' in content_type else 'mov'
+        
+        # Create a generator to stream the content
+        def generate():
+            for chunk in response.iter_content(chunk_size=8192):
+                yield chunk
+
+        # Return a streaming response
+        return Response(
+            generate(),
+            headers={
+                'Content-Type': content_type,
+                'Content-Disposition': f'attachment; filename=instagram_video.{file_extension}'
+            }
         )
     except requests.RequestException as e:
         logging.error(f"Error downloading video: {e}")
