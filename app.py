@@ -52,19 +52,25 @@ def search_video():
         logging.debug(f"API Response Data: {json_data}")
         
         if json_data.get('success') == True:
-            video_url = json_data.get('src_url')
-            if not video_url:
+            # Extract the correct download URL from the 'links' array
+            download_url = None
+            for link in json_data.get('links', []):
+                if link.get('quality') == 'video_0':
+                    download_url = link.get('link')
+                    break
+            
+            if not download_url:
                 return jsonify({"error": "No valid download URL found"}), 404
 
             thumbnail_url = json_data.get('picture', '')
             title = json_data.get('title', '')
             
-            logging.debug(f"Video URL: {video_url}")
+            logging.debug(f"Download URL: {download_url}")
             logging.debug(f"Thumbnail URL: {thumbnail_url}")
             logging.debug(f"Title: {title}")
             
             return jsonify({
-                "video_url": video_url, 
+                "video_url": download_url, 
                 "thumbnail_url": thumbnail_url,
                 "title": title
             })
@@ -91,7 +97,7 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
-        # Redirect to the video URL from the API response
+        # Redirect to the correct download URL
         return redirect(video_url)
     except Exception as e:
         logging.error(f"Unexpected error in download_video: {str(e)}")
