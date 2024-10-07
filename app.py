@@ -31,11 +31,11 @@ def search_video():
     if not is_instagram_url(instagram_url):
         return jsonify({"error": "Invalid Instagram URL"}), 400
 
-    conn = http.client.HTTPSConnection("instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com")
+    conn = http.client.HTTPSConnection("social-media-video-downloader.p.rapidapi.com/smvd/get/instagram")
 
     headers = {
         'x-rapidapi-key': API_KEY,
-        'x-rapidapi-host': "instagram-downloader-download-instagram-videos-stories1.p.rapidapi.com"
+        'x-rapidapi-host': "social-media-video-downloader.p.rapidapi.com"
     }
 
     encoded_url = quote(instagram_url)
