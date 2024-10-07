@@ -148,13 +148,7 @@ def get_thumbnail():
     except requests.RequestException as e:
         logging.error(f"Error fetching thumbnail: {e}")
         return jsonify({"error": "Failed to fetch thumbnail"}), 500
-    
-@app.route('/api/test_url', methods=['GET'])
-def test_url():
-    video_url = request.args.get('url')
-    if not video_url:
-        return jsonify({"error": "No URL provided"}), 400
-    return jsonify({"url": video_url})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
