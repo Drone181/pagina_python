@@ -31,7 +31,7 @@ def search_video():
     if not is_instagram_url(instagram_url):
         return jsonify({"error": "Invalid Instagram URL"}), 400
 
-    conn = http.client.HTTPSConnection("social-media-video-downloader.p.rapidapi.com/smvd/get/instagram")
+    conn = http.client.HTTPSConnection("social-media-video-downloader.p.rapidapi.com/smvd/get/instagram.com")
 
     headers = {
         'x-rapidapi-key': API_KEY,
