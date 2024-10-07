@@ -49,19 +49,31 @@ def search_video():
         logging.debug(f"API Response Status: {response.status_code}")
         logging.debug(f"API Response Data: {json_data}")
         
-        if 'download_url' in json_data and json_data['download_url']:
-            video_url = json_data['download_url']
-            thumbnail_url = json_data.get('thumb', '')
+        if 'data' in json_data and json_data['data']:
+            video_data = json_data['data'][0]  # Assume the first item is the one we want
+            video_url = video_data.get('video')
+            if not video_url:
+                # If 'video' is not present, look for other possible keys
+                for key in ['download_url', 'hd', 'sd']:
+                    if key in video_data:
+                        video_url = video_data[key]
+                        break
+            
+            if not video_url:
+                return jsonify({"error": "No valid download URL found"}), 404
+
+            thumbnail_url = video_data.get('thumb', '')
             if thumbnail_url:
                 thumbnail_url = unquote(thumbnail_url)
+            logging.debug(f"Video URL: {video_url}")
             logging.debug(f"Thumbnail URL: {thumbnail_url}")
             return jsonify({"video_url": video_url, "thumbnail_url": thumbnail_url})
         elif 'error' in json_data:
             logging.error(f"API returned an error: {json_data['error']}")
             return jsonify({"error": "API returned an error"}), 500
         else:
-            logging.error(f"Download URL not found in API response: {json_data}")
-            return jsonify({"error": "Download URL not found in API response"}), 500
+            logging.error(f"Unexpected API response structure: {json_data}")
+            return jsonify({"error": "Unexpected API response structure"}), 500
     except requests.RequestException as e:
         logging.error(f"Error communicating with API: {e}")
         return jsonify({"error": str(e)}), 500
