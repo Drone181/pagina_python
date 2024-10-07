@@ -91,39 +91,8 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
-        logging.info(f"Attempting to download video from URL: {video_url}")
-        
-        # Stream the video content
-        response = requests.get(video_url, stream=True, timeout=30)
-        response.raise_for_status()
-        
-        # Get the content type from the response headers
-        content_type = response.headers.get('content-type', 'video/mp4')
-        logging.info(f"Content-Type of the video: {content_type}")
-        
-        # Determine the appropriate file extension
-        file_extension = 'mp4' if 'mp4' in content_type else 'mov'
-        
-        # Create a generator to stream the content
-        def generate():
-            try:
-                for chunk in response.iter_content(chunk_size=8192):
-                    yield chunk
-            except Exception as e:
-                logging.error(f"Error while streaming video content: {str(e)}")
-                raise
-
-        # Return a streaming response
-        return Response(
-            generate(),
-            headers={
-                'Content-Type': content_type,
-                'Content-Disposition': f'attachment; filename=instagram_video.{file_extension}'
-            }
-        )
-    except requests.RequestException as e:
-        logging.error(f"Request exception while downloading video: {str(e)}")
-        return jsonify({"error": "Failed to download video", "details": str(e)}), 500
+        # Instead of downloading the video, we'll redirect to the video URL
+        return redirect(video_url)
     except Exception as e:
         logging.error(f"Unexpected error in download_video: {str(e)}")
         logging.error(traceback.format_exc())
