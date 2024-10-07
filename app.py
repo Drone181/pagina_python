@@ -31,31 +31,29 @@ def search_video():
     if not is_instagram_url(instagram_url):
         return jsonify({"error": "Invalid Instagram URL"}), 400
 
-    conn = http.client.HTTPSConnection("social-media-video-downloader.p.rapidapi.com/smvd/get/instagram.com")
+    url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/instagram"
+
+    querystring = {"url": instagram_url}
 
     headers = {
-        'x-rapidapi-key': API_KEY,
-        'x-rapidapi-host': "social-media-video-downloader.p.rapidapi.com"
+        "x-rapidapi-key": API_KEY,
+        "x-rapidapi-host": "social-media-video-downloader.p.rapidapi.com"
     }
 
-    encoded_url = quote(instagram_url)
-    endpoint = f"/get-info-rapidapi?url={encoded_url}"
-
     try:
-        conn.request("GET", endpoint, headers=headers)
-        res = conn.getresponse()
-        data = res.read()
+        response = requests.get(url, headers=headers, params=querystring)
+        response.raise_for_status()
         
-        logging.debug(f"API Response Status: {res.status}")
-        logging.debug(f"API Response Data: {data.decode('utf-8')}")
+        json_data = response.json()
         
-        json_data = json.loads(data.decode("utf-8"))
+        logging.debug(f"API Response Status: {response.status_code}")
+        logging.debug(f"API Response Data: {json_data}")
         
         if 'download_url' in json_data and json_data['download_url']:
             video_url = json_data['download_url']
             thumbnail_url = json_data.get('thumb', '')
             if thumbnail_url:
-                thumbnail_url = unquote(thumbnail_url)  # Decode the URL if it's encoded
+                thumbnail_url = unquote(thumbnail_url)
             logging.debug(f"Thumbnail URL: {thumbnail_url}")
             return jsonify({"video_url": video_url, "thumbnail_url": thumbnail_url})
         elif 'error' in json_data:
@@ -64,6 +62,9 @@ def search_video():
         else:
             logging.error(f"Download URL not found in API response: {json_data}")
             return jsonify({"error": "Download URL not found in API response"}), 500
+    except requests.RequestException as e:
+        logging.error(f"Error communicating with API: {e}")
+        return jsonify({"error": str(e)}), 500
     except json.JSONDecodeError as e:
         logging.error(f"JSON Decode Error: {e}")
         return jsonify({"error": "Invalid JSON response from API"}), 500
