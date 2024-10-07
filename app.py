@@ -49,25 +49,23 @@ def search_video():
         logging.debug(f"API Response Status: {response.status_code}")
         logging.debug(f"API Response Data: {json_data}")
         
-        if 'data' in json_data and json_data['data']:
-            video_data = json_data['data'][0]  # Assume the first item is the one we want
-            video_url = video_data.get('video')
-            if not video_url:
-                # If 'video' is not present, look for other possible keys
-                for key in ['download_url', 'hd', 'sd']:
-                    if key in video_data:
-                        video_url = video_data[key]
-                        break
-            
+        if json_data.get('success') == True:
+            video_url = json_data.get('src_url')
             if not video_url:
                 return jsonify({"error": "No valid download URL found"}), 404
 
-            thumbnail_url = video_data.get('thumb', '')
-            if thumbnail_url:
-                thumbnail_url = unquote(thumbnail_url)
+            thumbnail_url = json_data.get('picture', '')
+            title = json_data.get('title', '')
+            
             logging.debug(f"Video URL: {video_url}")
             logging.debug(f"Thumbnail URL: {thumbnail_url}")
-            return jsonify({"video_url": video_url, "thumbnail_url": thumbnail_url})
+            logging.debug(f"Title: {title}")
+            
+            return jsonify({
+                "video_url": video_url, 
+                "thumbnail_url": thumbnail_url,
+                "title": title
+            })
         elif 'error' in json_data:
             logging.error(f"API returned an error: {json_data['error']}")
             return jsonify({"error": "API returned an error"}), 500
