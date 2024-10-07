@@ -91,7 +91,7 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
-        # Redirect to the video URL
+        # Redirect to the video URL from the API response
         return redirect(video_url)
     except Exception as e:
         logging.error(f"Unexpected error in download_video: {str(e)}")
