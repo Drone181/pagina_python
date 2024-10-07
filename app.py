@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, redirect
 import http.client
 import json
 import os
@@ -91,7 +91,7 @@ def download_video():
         return jsonify({"error": "No URL provided"}), 400
 
     try:
-        # Instead of downloading the video, we'll redirect to the video URL
+        # Redirect to the video URL
         return redirect(video_url)
     except Exception as e:
         logging.error(f"Unexpected error in download_video: {str(e)}")
