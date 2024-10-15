@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file, redirect
+""" from flask import Flask, request, jsonify, render_template, send_file, redirect
 import http.client
 import json
 import os
@@ -124,6 +124,115 @@ def get_thumbnail():
         logging.error(f"Error fetching thumbnail: {e}")
         return jsonify({"error": "Failed to fetch thumbnail"}), 500
 
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) """
+from flask import Flask, request, jsonify, render_template, send_file, redirect
+import requests
+import logging
+import os
+from urllib.parse import unquote
+import re
+from io import BytesIO
+
+app = Flask(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
+API_KEY = os.environ.get('RAPIDAPI_KEY', '72ea23ea89mshf6775ef3b0dde3cp1c8da5jsn0d645a94c48c')
+
+def is_instagram_url(url):
+    instagram_regex = r'^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+\/?'
+    return re.match(instagram_regex, url) is not None
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/search', methods=['POST'])
+def search_video():
+    instagram_url = request.json.get('url')
+    if not instagram_url or not is_instagram_url(instagram_url):
+        return jsonify({"error": "Invalid or missing Instagram URL"}), 400
+
+    url = "https://social-media-video-downloader.p.rapidapi.com/smvd/get/instagram"
+    headers = {
+        "x-rapidapi-key": API_KEY,
+        "x-rapidapi-host": "social-media-video-downloader.p.rapidapi.com"
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params={"url": instagram_url})
+        response.raise_for_status()
+        json_data = response.json()
+
+        if json_data.get('success') == True:
+            download_url = next((link['link'] for link in json_data.get('links', []) if link.get('quality') == 'video_0'), None)
+            if not download_url:
+                return jsonify({"error": "No valid download URL found"}), 404
+
+            return jsonify({
+                "video_url": download_url, 
+                "thumbnail_url": json_data.get('picture', ''),
+                "title": json_data.get('title', '')
+            })
+        else:
+            logging.error(f"API Error: {json_data.get('error', 'Unknown error')}")
+            return jsonify({"error": "API returned an error"}), 500
+    except requests.RequestException as e:
+        logging.error(f"Request Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        logging.error(f"Unexpected Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/download', methods=['GET'])
+def download_video():
+    video_url = request.args.get('url')
+    if not video_url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    try:
+        # Instead of redirecting, we'll fetch the video content and send it as a file
+        response = requests.get(video_url, stream=True)
+        response.raise_for_status()
+
+        # Get the filename from the Content-Disposition header, or use a default name
+        filename = response.headers.get('Content-Disposition', '').split('filename=')[-1].strip('"') or 'instagram_video.mp4'
+
+        # Create a generator to stream the file content
+        def generate():
+            for chunk in response.iter_content(chunk_size=8192):
+                yield chunk
+
+        # Return a streaming response
+        return Response(
+            generate(),
+            headers={
+                "Content-Type": response.headers.get('Content-Type', 'video/mp4'),
+                "Content-Disposition": f"attachment; filename={filename}"
+            },
+            status=200
+        )
+    except requests.RequestException as e:
+        logging.error(f"Error downloading video: {str(e)}")
+        return jsonify({"error": "Failed to download video"}), 500
+
+@app.route('/api/thumbnail')
+def get_thumbnail():
+    thumbnail_url = request.args.get('url')
+    if not thumbnail_url:
+        return jsonify({"error": "No thumbnail URL provided"}), 400
+
+    try:
+        response = requests.get(unquote(thumbnail_url))
+        response.raise_for_status()
+        return send_file(
+            BytesIO(response.content),
+            mimetype='image/jpeg'
+        )
+    except requests.RequestException as e:
+        logging.error(f"Error fetching thumbnail: {str(e)}")
+        return jsonify({"error": "Failed to fetch thumbnail"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
