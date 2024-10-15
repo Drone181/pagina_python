@@ -172,8 +172,8 @@ def search_video():
             download_url = None
             for link in json_data.get('links', []):
                 logging.debug(f"Link: {link}")
-                if link.get('quality') == 'video_0':
-                    download_url = link.get('link')
+                if 'link' in link and link['link'].startswith('http'):
+                    download_url = link['link']
                     break
             
             if not download_url:
@@ -196,38 +196,14 @@ def search_video():
         logging.error(f"Unexpected Error: {str(e)}")
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-
 @app.route('/api/download', methods=['GET'])
 def download_video():
     video_url = request.args.get('url')
     if not video_url:
         return jsonify({"error": "No URL provided"}), 400
 
-    try:
-        # Instead of redirecting, we'll fetch the video content and send it as a file
-        response = requests.get(video_url, stream=True)
-        response.raise_for_status()
-
-        # Get the filename from the Content-Disposition header, or use a default name
-        filename = response.headers.get('Content-Disposition', '').split('filename=')[-1].strip('"') or 'instagram_video.mp4'
-
-        # Create a generator to stream the file content
-        def generate():
-            for chunk in response.iter_content(chunk_size=8192):
-                yield chunk
-
-        # Return a streaming response
-        return Response(
-            generate(),
-            headers={
-                "Content-Type": response.headers.get('Content-Type', 'video/mp4'),
-                "Content-Disposition": f"attachment; filename={filename}"
-            },
-            status=200
-        )
-    except requests.RequestException as e:
-        logging.error(f"Error downloading video: {str(e)}")
-        return jsonify({"error": "Failed to download video"}), 500
+    # Redirect to the download URL
+    return redirect(video_url)
 
 @app.route('/api/thumbnail')
 def get_thumbnail():
