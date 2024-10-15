@@ -145,9 +145,19 @@ def is_instagram_url(url):
     instagram_regex = r'^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+\/?'
     return re.match(instagram_regex, url) is not None
 
-def is_video_link(link):
-    video_indicators = ['video', '.mp4', 'dashvideo']
-    return any(indicator in link.lower() for indicator in video_indicators)
+def extract_video_url(links):
+    # First, try to find a link with quality 'video_hd_original_0'
+    for link in links:
+        if link.get('quality') == 'video_hd_original_0':
+            return link.get('link')
+    
+    # If not found, look for any link that contains 'video' in the quality
+    for link in links:
+        if 'video' in link.get('quality', '').lower():
+            return link.get('link')
+    
+    # If still not found, return the first link (if any)
+    return links[0].get('link') if links else None
 
 @app.route('/')
 def index():
@@ -173,12 +183,8 @@ def search_video():
         logging.debug(f"API Response: {json_data}")
 
         if json_data.get('success') == True:
-            download_url = None
-            for link in json_data.get('links', []):
-                logging.debug(f"Link: {link}")
-                if 'link' in link and link['link'].startswith('http') and is_video_link(link['link']):
-                    download_url = link['link']
-                    break
+            links = json_data.get('links', [])
+            download_url = extract_video_url(links)
             
             if not download_url:
                 logging.error("No valid video download URL found in API response")
