@@ -127,6 +127,7 @@ def get_thumbnail():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) """
+
 from flask import Flask, request, jsonify, render_template, send_file, redirect
 import requests
 import logging
@@ -165,10 +166,19 @@ def search_video():
         response.raise_for_status()
         json_data = response.json()
 
+        logging.debug(f"API Response: {json_data}")
+
         if json_data.get('success') == True:
-            download_url = next((link['link'] for link in json_data.get('links', []) if link.get('quality') == 'video_0'), None)
+            download_url = None
+            for link in json_data.get('links', []):
+                logging.debug(f"Link: {link}")
+                if link.get('quality') == 'video_0':
+                    download_url = link.get('link')
+                    break
+            
             if not download_url:
-                return jsonify({"error": "No valid download URL found"}), 404
+                logging.error("No valid download URL found in API response")
+                return jsonify({"error": "No valid download URL found in API response"}), 404
 
             return jsonify({
                 "video_url": download_url, 
@@ -176,14 +186,16 @@ def search_video():
                 "title": json_data.get('title', '')
             })
         else:
-            logging.error(f"API Error: {json_data.get('error', 'Unknown error')}")
-            return jsonify({"error": "API returned an error"}), 500
+            error_message = json_data.get('error', 'Unknown error')
+            logging.error(f"API Error: {error_message}")
+            return jsonify({"error": f"API returned an error: {error_message}"}), 500
     except requests.RequestException as e:
         logging.error(f"Request Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Request failed: {str(e)}"}), 500
     except Exception as e:
         logging.error(f"Unexpected Error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+
 
 @app.route('/api/download', methods=['GET'])
 def download_video():
